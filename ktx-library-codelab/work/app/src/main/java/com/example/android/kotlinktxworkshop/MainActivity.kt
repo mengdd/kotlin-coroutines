@@ -28,19 +28,12 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-
-    private var listeningToUpdates = false
-
-    private val locationCallback: LocationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult?) {
-            if (locationResult != null) {
-                showLocation(R.id.textView, locationResult.lastLocation)
-            }
-        }
-    }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -53,11 +46,6 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-//        val permissionApproved =
-//            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-//        if (!permissionApproved) {
-//            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
-//        }
         if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
         }
@@ -79,15 +67,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startUpdatingLocation() {
-        fusedLocationClient.requestLocationUpdates(
-            createLocationRequest(),
-            locationCallback,
-            Looper.getMainLooper()
-        ).addOnSuccessListener { listeningToUpdates = true }
-            .addOnFailureListener { e ->
-                findAndSetText(R.id.textView, "Unable to get location.")
-                Log.d(TAG, "Unable to get location", e)
-            }
+        lifecycleScope.launch {
+            fusedLocationClient.locationFlow()
+                .conflate()
+                .catch { e ->
+                    findAndSetText(R.id.textView, "Unable to get location.")
+                    Log.d(TAG, "Unable to get location", e)
+                }
+                .collect { location ->
+                    showLocation(R.id.textView, location)
+                    Log.d(TAG, location.toString())
+                }
+        }
     }
 
     override fun onStop() {
