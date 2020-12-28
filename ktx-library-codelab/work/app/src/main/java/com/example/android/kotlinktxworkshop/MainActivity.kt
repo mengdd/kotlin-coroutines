@@ -22,14 +22,13 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.example.android.myktxlibrary.createLocationRequest
-import com.example.android.myktxlibrary.findAndSetText
-import com.example.android.myktxlibrary.hasPermission
-import com.example.android.myktxlibrary.showLocation
+import androidx.lifecycle.lifecycleScope
+import com.example.android.myktxlibrary.*
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -63,18 +62,20 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
         }
 
-        getLastKnownLocation()
-        startUpdatingLocation()
-    }
-
-    private fun getLastKnownLocation() {
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { lastLocation ->
-                showLocation(R.id.textView, lastLocation)
-            }.addOnFailureListener { e ->
+        lifecycleScope.launch {
+            try {
+                getLastKnownLocation()
+            } catch (e: Exception) {
                 findAndSetText(R.id.textView, "Unable to get location.")
                 Log.d(TAG, "Unable to get location", e)
             }
+        }
+        startUpdatingLocation()
+    }
+
+    private suspend fun getLastKnownLocation() {
+        val lastLocation = fusedLocationClient.awaitLastLocation()
+        showLocation(R.id.textView, lastLocation)
     }
 
     private fun startUpdatingLocation() {

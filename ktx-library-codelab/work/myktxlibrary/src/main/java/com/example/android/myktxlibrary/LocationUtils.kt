@@ -17,7 +17,11 @@
 package com.example.android.myktxlibrary
 
 import android.location.Location
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 fun createLocationRequest() = LocationRequest.create().apply {
     interval = 3000
@@ -30,3 +34,12 @@ fun Location.asString(format: Int = Location.FORMAT_DEGREES): String {
     val longitude = Location.convert(longitude, format)
     return "Location is: $latitude, $longitude"
 }
+
+suspend fun FusedLocationProviderClient.awaitLastLocation(): Location =
+    suspendCancellableCoroutine<Location> { continuation ->
+        lastLocation.addOnSuccessListener { location ->
+            continuation.resume(location)
+        }.addOnFailureListener { e ->
+            continuation.resumeWithException(e)
+        }
+    }
