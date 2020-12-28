@@ -16,6 +16,7 @@
 
 package com.example.android.kotlinktxworkshop
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
@@ -23,6 +24,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.android.myktxlibrary.createLocationRequest
 import com.example.android.myktxlibrary.findAndSetText
+import com.example.android.myktxlibrary.hasPermission
 import com.example.android.myktxlibrary.showLocation
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -57,6 +59,9 @@ class MainActivity : AppCompatActivity() {
 //        if (!permissionApproved) {
 //            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
 //        }
+        if (!hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
+        }
 
         getLastKnownLocation()
         startUpdatingLocation()

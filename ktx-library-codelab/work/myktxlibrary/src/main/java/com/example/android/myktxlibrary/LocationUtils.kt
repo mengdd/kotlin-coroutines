@@ -28,5 +28,5 @@ fun createLocationRequest() = LocationRequest.create().apply {
 fun Location.asString(format: Int = Location.FORMAT_DEGREES): String {
     val latitude = Location.convert(latitude, format)
     val longitude = Location.convert(longitude, format)
-    return TODO()
+    return "Location is: $latitude, $longitude"
 }
