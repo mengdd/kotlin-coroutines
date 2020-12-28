@@ -22,6 +22,8 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import com.example.android.myktxlibrary.*
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        startUpdatingLocation()
     }
 
     override fun onStart() {
@@ -58,7 +61,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, "Unable to get location", e)
             }
         }
-        startUpdatingLocation()
     }
 
     private suspend fun getLastKnownLocation() {
@@ -67,18 +69,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startUpdatingLocation() {
-        lifecycleScope.launch {
-            fusedLocationClient.locationFlow()
-                .conflate()
-                .catch { e ->
-                    findAndSetText(R.id.textView, "Unable to get location.")
-                    Log.d(TAG, "Unable to get location", e)
-                }
-                .collect { location ->
-                    showLocation(R.id.textView, location)
-                    Log.d(TAG, location.toString())
-                }
-        }
+        fusedLocationClient.locationFlow()
+            .conflate()
+            .catch { e ->
+                findAndSetText(R.id.textView, "Unable to get location.")
+                Log.d(TAG, "Unable to get location", e)
+            }
+            .asLiveData()
+            .observe(this, Observer { location ->
+                showLocation(R.id.textView, location)
+                Log.d(TAG, location.toString())
+            })
     }
 
     override fun onStop() {
